@@ -2,7 +2,6 @@ const fs = require("fs-extra")
 const axios = require('axios').default;
 const path = require('path')
 const yaml = require('js-yaml');
-var { graphql, buildSchema } = require('graphql');
 
 const l = console.log
 
