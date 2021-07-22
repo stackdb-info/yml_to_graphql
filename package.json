@@ -1,0 +1,16 @@
+{
+  "name": "yml_to_graphql",
+  "version": "1.0.0",
+  "description": "Convert a static YML-file-based DB to GraphQL compatible DB like dgraph",
+  "main": "populate.js",
+  "scripts": {
+    "start": "SCHEMA_PATH=\"../db/schema.graphql\" GRAPHQL_SERVER=\"http://localhost:8080\" YML_DB_PATH=\"../db/database\" node populate.js"
+  },
+  "author": "leorolland",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "fs-extra": "^10.0.0",
+    "js-yaml": "^4.1.0"
+  }
+}
