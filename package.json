@@ -4,7 +4,8 @@
   "description": "Convert a static YML-file-based DB to GraphQL compatible DB like dgraph",
   "main": "populate.js",
   "scripts": {
-    "start": "SCHEMA_PATH=\"../db/schema.graphql\" GRAPHQL_SERVER=\"http://localhost:8080\" YML_DB_PATH=\"../db/database\" node populate.js"
+    "start": "SCHEMA_PATH=\"../db/schema.graphql\" GRAPHQL_SERVER=\"http://localhost:8080\" YML_DB_PATH=\"../db/database\" node populate.js",
+    "queryAll": "GRAPHQL_SERVER=\"http://localhost:8080\" YML_DB_PATH=\"../db/database\" node queryAll.js"
   },
   "author": "leorolland",
   "license": "ISC",

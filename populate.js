@@ -2,7 +2,7 @@ const fs = require("fs-extra")
 const axios = require('axios').default;
 const path = require('path')
 const yaml = require('js-yaml');
-
+const queryAll = require('./queryAll').queryAll
 const l = console.log
 
 async function createSchema() {
@@ -47,19 +47,6 @@ async function populate() {
     )
     await Promise.all(deepPromiseArray.flat())
     l(`DB populated !\n`)
-}
-
-async function queryAll(type) {
-    const query = `
-        query {
-            query${type} {
-                name
-            }
-        }
-    `
-    l(`Running query ${query}`)
-    return axios.post(process.env.GRAPHQL_SERVER + '/graphql', query, { headers: { "content-type": "application/graphql" } })
-        .then(r => console.log('query result for ' + type + '\n', r.data.data))
 }
 
 async function main() {
