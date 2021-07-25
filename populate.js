@@ -14,22 +14,17 @@ async function createSchema() {
     l(`Schema updated !\n`)
 }
 
-async function populateWithYML(type, yml) {
+function generateAdd(type, yml) {
     let json = JSON.stringify(yaml.load(yml)).replace(/"([^"]+)":/g, '$1:')
-    const query = `
-        mutation {
-            add${type}(input: [
-                ${json}
-            ]) {
-                ${type.toLowerCase()} {
-                    name
-                }
+    return `
+        add${type}(input: [
+            ${json}
+        ]) {
+            ${type.toLowerCase()} {
+                name
             }
         }
     `
-    l(`Running query ${query}`)
-    return axios.post(process.env.GRAPHQL_SERVER + '/graphql', query, { headers: { "content-type": "application/graphql" } })
-        .then(r => console.log(r.status))
 }
 
 async function populate() {
@@ -37,15 +32,25 @@ async function populate() {
     l(`Reading YML directory "${process.env.YML_DB_PATH}"`)
     const dirs = await fs.readdirSync(process.env.YML_DB_PATH)
     l(`Found : ${dirs.join(", ")}`)
-    const deepPromiseArray = dirs.map(dir => fs
-        .readdir(path.join(process.env.YML_DB_PATH, dir))
-        .then(files => files.map(file => fs
-            .readFile(path.join(process.env.YML_DB_PATH, dir, file))
-            .then(yml => populateWithYML(dir, yml))
-            .then(() => queryAll(dir))
-        ))
+    const readDirsPromise = Promise.all(
+        dirs.map(dir => fs
+            .readdir(path.join(process.env.YML_DB_PATH, dir)) // Read the content of each dir
+            .then(files => files.map( file => fs // For each file
+                // Read it's content and generate the GraphQL add query
+                .readFile(path.join(process.env.YML_DB_PATH, dir, file)) 
+                .then(yml => generateAdd(dir, yml) )
+            )))
     )
-    await Promise.all(deepPromiseArray.flat())
+    // List of "add" GraphQL queries
+    let adds = await Promise.all((await readDirsPromise).flat())
+    const query = `
+        mutation {
+            ${adds.join()}
+        }
+    `
+    l(`Running query ${query}`)
+    await axios.post(process.env.GRAPHQL_SERVER + '/graphql', query, { headers: { "content-type": "application/graphql" } })
+        .then(r => console.log(r.status))
     l(`DB populated !\n`)
 }
 
