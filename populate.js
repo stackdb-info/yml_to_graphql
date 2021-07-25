@@ -9,7 +9,7 @@ async function createSchema() {
     l(`Updating schema...`)
     l(`Reading file "${process.env.SCHEMA_PATH}"`)
     const schema = await fs.readFileSync(process.env.SCHEMA_PATH, "utf-8");
-    l(`Altering database`)
+    l(`Altering database, schema`, schema)
     await axios.post(process.env.GRAPHQL_SERVER + '/admin/schema', schema).then(r => console.log(r.status))
     l(`Schema updated !\n`)
 }
@@ -25,6 +25,12 @@ function generateAdd(type, yml) {
             }
         }
     `
+}
+
+async function runQuery(query) {
+    l(`Running query ${query}`)
+    return axios.post(process.env.GRAPHQL_SERVER + '/graphql', query, { headers: { "content-type": "application/graphql" } })
+        .then(r => console.log(r.status))
 }
 
 async function populate() {
@@ -43,14 +49,24 @@ async function populate() {
     )
     // List of "add" GraphQL queries
     let adds = await Promise.all((await readDirsPromise).flat())
-    const query = `
+    runQuery(`
         mutation {
             ${adds.join()}
         }
-    `
-    l(`Running query ${query}`)
-    await axios.post(process.env.GRAPHQL_SERVER + '/graphql', query, { headers: { "content-type": "application/graphql" } })
-        .then(r => console.log(r.status))
+    `)
+    runQuery(`
+        mutation {
+            addTypesList(input: [
+                {
+                    types: ${JSON.stringify(dirs)}
+                }
+            ]) {
+                typesList {
+                    types
+                }
+            }
+        }
+    `)
     l(`DB populated !\n`)
 }
 
