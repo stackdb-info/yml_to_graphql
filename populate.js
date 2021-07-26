@@ -5,6 +5,12 @@ const yaml = require('js-yaml');
 const queryAll = require('./queryAll').queryAll
 const l = console.log
 
+async function clearDb() {
+    l(`Dropping DB...`)
+    await axios.post(process.env.GRAPHQL_SERVER + '/alter', { "drop_all": true }).then(r => console.log(r.status))
+    l(`DB dropped !`)
+}
+
 async function createSchema() {
     l(`Updating schema...`)
     l(`Reading file "${process.env.SCHEMA_PATH}"`)
@@ -41,10 +47,10 @@ async function populate() {
     const readDirsPromise = Promise.all(
         dirs.map(dir => fs
             .readdir(path.join(process.env.YML_DB_PATH, dir)) // Read the content of each dir
-            .then(files => files.map( file => fs // For each file
+            .then(files => files.map(file => fs // For each file
                 // Read it's content and generate the GraphQL add query
-                .readFile(path.join(process.env.YML_DB_PATH, dir, file)) 
-                .then(yml => generateAdd(dir, yml) )
+                .readFile(path.join(process.env.YML_DB_PATH, dir, file))
+                .then(yml => generateAdd(dir, yml))
             )))
     )
     // List of "add" GraphQL queries
@@ -71,6 +77,7 @@ async function populate() {
 }
 
 async function main() {
+    await clearDb()
     await createSchema()
     await populate()
 }
