@@ -22,6 +22,7 @@ async function createSchema() {
 
 function generateAdd(type, yml) {
     let json = JSON.stringify(yaml.load(yml)).replace(/"([^"]+)":/g, '$1:')
+    l(`Inserting ${json}`)
     return `
         add${type}(input: [
             ${json}
