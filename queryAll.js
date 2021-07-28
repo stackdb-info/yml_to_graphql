@@ -1,10 +1,14 @@
 const axios = require('axios').default;
 const fs = require('fs-extra')
 
+function capitalize(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
 async function queryAll(type) {
     const query = `
         query {
-            query${type} {
+            query${capitalize(type)} {
                 name
             }
         }

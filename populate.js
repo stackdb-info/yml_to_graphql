@@ -5,6 +5,10 @@ const yaml = require('js-yaml');
 const queryAll = require('./queryAll').queryAll
 const l = console.log
 
+function capitalize(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
 async function clearDb() {
     l(`Dropping DB...`)
     await axios.post(process.env.GRAPHQL_SERVER + '/alter', { "drop_all": true }).then(r => console.log(r.status))
@@ -24,7 +28,7 @@ function generateAdd(type, yml) {
     let json = JSON.stringify(yaml.load(yml)).replace(/"([^"]+)":/g, '$1:')
     l(`Inserting ${json}`)
     return `
-        add${type}(input: [
+        add${capitalize(type)}(input: [
             ${json}
         ]) {
             ${type.toLowerCase()} {
