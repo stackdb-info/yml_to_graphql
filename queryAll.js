@@ -5,7 +5,7 @@ function capitalize(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-async function queryAll(type) {
+function queryAll(type) {
     const query = `
         query {
             query${capitalize(type)} {
@@ -24,11 +24,12 @@ async function queryAll(type) {
         })
 }
 
-function main() {
+async function main() {
     const dirs = fs.readdirSync(process.env.YML_DB_PATH)
     console.log("reading dirs : ", dirs)
-    dirs.forEach(queryAll)
+    await Promise.all(dirs.map(queryAll))
 }
+
 if (require.main === module) main()
 
 module.exports.queryAll = queryAll
