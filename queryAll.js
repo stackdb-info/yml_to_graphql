@@ -15,7 +15,13 @@ async function queryAll(type) {
     `
     console.log(`Running query ${query}`)
     return axios.post(process.env.GRAPHQL_SERVER + '/graphql', query, { headers: { "content-type": "application/graphql" } })
-        .then(r => console.log('query result for ' + type + '\n', r.data.data))
+        .then(r => {
+            if (r.data.data == undefined || Object.values(r.data.data)[0].length == 0) {
+                console.error("No data received from DB : ", type, r.data.data)
+                process.exit(2)
+            }
+            console.log('query result for ' + type + '\n', r.data.data)
+        })
 }
 
 function main() {
