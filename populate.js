@@ -24,13 +24,27 @@ async function createSchema() {
     l(`Schema updated !\n`)
 }
 
-function generateAdd(type, yml) {
-    let json = JSON.stringify(yaml.load(yml)).replace(/"([^"]+)":/g, '$1:')
-    l(`Inserting ${json}`)
+function generateAdd({ type, yml }) {
+    let obj = yaml.load(yml)
     return `
-        add${capitalize(type)}(input: [
-            ${json}
-        ]) {
+        add${capitalize(type)}(input: {name: "${obj.name}"}) {
+            ${type.toLowerCase()} {
+                name
+            }
+        }
+    `
+}
+
+function generateUpdate({ type, yml }) {
+    let obj = yaml.load(yml)
+    const name = obj.name
+    delete obj.name
+    let json = JSON.stringify(obj).replace(/"([^"]+)":/g, '$1:')
+    return `
+        update${capitalize(type)}(input: 
+            { filter: {name: {eq: "${name}"}},
+            set: ${json}
+            }) {
             ${type.toLowerCase()} {
                 name
             }
@@ -49,23 +63,28 @@ async function populate() {
     l(`Reading YML directory "${process.env.YML_DB_PATH}"`)
     const dirs = await fs.readdirSync(process.env.YML_DB_PATH)
     l(`Found : ${dirs.join(", ")}`)
-    const readDirsPromise = Promise.all(
-        dirs.map(dir => fs
-            .readdir(path.join(process.env.YML_DB_PATH, dir)) // Read the content of each dir
+    const recursiveReads = dirs.map(dir =>
+        fs.readdir(path.join(process.env.YML_DB_PATH, dir)) // Read the content of each dir
             .then(files => files.map(file => fs // For each file
                 // Read it's content and generate the GraphQL add query
-                .readFile(path.join(process.env.YML_DB_PATH, dir, file))
-                .then(yml => generateAdd(dir, yml))
-            )))
+                .readFile(path.join(process.env.YML_DB_PATH, dir, file), 'utf8')
+                .then(contents => ({ type: dir, yml: contents }))
+            ))
     )
+
     // List of "add" GraphQL queries
-    let adds = await Promise.all((await readDirsPromise).flat())
-    runQuery(`
+    let contents = await Promise.all((await Promise.all(recursiveReads)).flat(2))
+    await runQuery(`
         mutation {
-            ${adds.join()}
+            ${contents.map(generateAdd).join('')}
         }
     `)
-    runQuery(`
+    await runQuery(`
+        mutation {
+            ${contents.map(generateUpdate).join('')}
+        }
+    `)
+    await runQuery(`
         mutation {
             addTypesList(input: [
                 {
