@@ -39,7 +39,23 @@ function generateUpdate({ type, yml }) {
     let obj = yaml.load(yml)
     const name = obj.name
     delete obj.name
-    let json = JSON.stringify(obj).replace(/"([^"]+)":/g, '$1:')
+    // Enums should not be inserted with commas
+    let enums = []
+    Object.keys(obj).forEach(k => {
+        // Detect enums, and isolate them
+        if (k.includes('enum_')) {
+            if (Array.isArray(obj[k])) // If list of enums
+                enums.push({ key: k, val: `[${obj[k]}]` })
+            else
+                enums.push({ key: k, val: obj[k] })
+            delete obj[k]
+        }
+    })
+    let json = JSON.stringify(obj)
+        .replace(/"([^"]+)":/g, '$1:') // Remove commas around keys
+        .replace(/^{|}$/g, '') // Remove curly braces around json
+    let enumAsGraphQL = enums.map(e => `${e.key}: ${e.val}`).join()
+    json = `{${json}${enumAsGraphQL && ','}${enumAsGraphQL}}`
     return `
         update${capitalize(type)}(input: 
             { filter: {name: {eq: "${name}"}},
